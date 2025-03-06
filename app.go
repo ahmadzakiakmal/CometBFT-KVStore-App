@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"log"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/dgraph-io/badger/v4"
@@ -68,7 +69,41 @@ func (app *KVStoreApplication) FinalizeBlock(
 	_ context.Context,
 	req *abcitypes.FinalizeBlockRequest,
 ) (*abcitypes.FinalizeBlockResponse, error) {
-	return &abcitypes.FinalizeBlockResponse{}, nil
+	var txs = make([]*abcitypes.ExecTxResult, len(req.Txs))
+
+	app.onGoingBlock = app.db.NewTransaction(true)
+	for i, tx := range req.Txs {
+		if code := app.isValid(tx); code != 0 {
+			log.Printf("Error: invalid transaction index %v", i)
+			txs[i] = &abcitypes.ExecTxResult{Code: code}
+		} else {
+			parts := bytes.SplitN(tx, []byte("="), 2)
+			key, value := parts[0], parts[1]
+			log.Printf("Adding key %s with value %s", key, value)
+
+			if err := app.onGoingBlock.Set(key, value); err != nil {
+				log.Panicf("Error writing to database, unable to execute tx: %v", err)
+			}
+
+			log.Printf("Successfully added key %s with value %s to database", key, value)
+
+			txs[i] = &abcitypes.ExecTxResult{
+				Code: 0,
+				Events: []abcitypes.Event{
+					{
+						Type: "app",
+						Attributes: []abcitypes.EventAttribute{
+							{Key: "key", Value: string(key), Index: true},
+							{Key: "value", Value: string(value), Index: true},
+						},
+					},
+				},
+			}
+		}
+	}
+	return &abcitypes.FinalizeBlockResponse{
+		TxResults: txs,
+	}, nil
 }
 
 func (app *KVStoreApplication) Commit(
