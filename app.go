@@ -1,19 +1,25 @@
 package main
 
 import (
+	"bytes"
 	"context"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
+	"github.com/dgraph-io/badger/v4"
 )
 
 type KVStoreApplication struct {
+	db           *badger.DB
+	onGoingBlock *badger.Txn
 }
 
 var _ abcitypes.Application = (*KVStoreApplication)(nil)
 
-func NewKVStoreApplicatio() *KVStoreApplication {
-	return &KVStoreApplication{}
+func NewKVStoreApplication(db *badger.DB) *KVStoreApplication {
+	return &KVStoreApplication{db: db}
 }
+
+//? Method Interfaces
 
 func (app *KVStoreApplication) Info(
 	_ context.Context,
@@ -33,7 +39,8 @@ func (app *KVStoreApplication) CheckTx(
 	_ context.Context,
 	check *abcitypes.CheckTxRequest,
 ) (*abcitypes.CheckTxResponse, error) {
-	return &abcitypes.CheckTxResponse{}, nil
+	code := app.isValid(check.Tx)
+	return &abcitypes.CheckTxResponse{Code: code}, nil
 }
 
 func (app *KVStoreApplication) InitChain(
@@ -112,4 +119,13 @@ func (app *KVStoreApplication) VerifyVoteExtension(
 	verify *abcitypes.VerifyVoteExtensionRequest,
 ) (*abcitypes.VerifyVoteExtensionResponse, error) {
 	return &abcitypes.VerifyVoteExtensionResponse{}, nil
+}
+
+// ? Helper Functions
+func (app *KVStoreApplication) isValid(tx []byte) uint32 {
+	parts := bytes.Split(tx, []byte("="))
+	if len(parts) != 2 {
+		return 1
+	}
+	return 0
 }
