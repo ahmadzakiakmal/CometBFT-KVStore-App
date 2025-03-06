@@ -110,7 +110,7 @@ func (app *KVStoreApplication) Commit(
 	_ context.Context,
 	commit *abcitypes.CommitRequest,
 ) (*abcitypes.CommitResponse, error) {
-	return &abcitypes.CommitResponse{}, nil
+	return &abcitypes.CommitResponse{}, app.onGoingBlock.Commit()
 }
 
 func (app *KVStoreApplication) ListSnapshots(
