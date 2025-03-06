@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"log"
 
 	abcitypes "github.com/cometbft/cometbft/abci/types"
@@ -33,7 +34,31 @@ func (app *KVStoreApplication) Query(
 	_ context.Context,
 	req *abcitypes.QueryRequest,
 ) (*abcitypes.QueryResponse, error) {
-	return &abcitypes.QueryResponse{}, nil
+	resp := abcitypes.QueryResponse{Key: req.Data}
+
+	dbErr := app.db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get(req.Data)
+
+		if err != nil {
+			if !errors.Is(err, badger.ErrKeyNotFound) {
+				return err
+			}
+			resp.Log = "key doesn't exist"
+			return nil
+		}
+
+		return item.Value(func(val []byte) error {
+			resp.Log = "exists"
+			resp.Value = val
+			return nil
+		})
+	})
+
+	if dbErr != nil {
+		log.Panicf("Error reading database, unable to execute query: %v", dbErr)
+	}
+
+	return &resp, nil
 }
 
 func (app *KVStoreApplication) CheckTx(
