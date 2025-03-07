@@ -80,6 +80,11 @@ func (app *KVStoreApplication) PrepareProposal(
 	_ context.Context,
 	proposal *abcitypes.PrepareProposalRequest,
 ) (*abcitypes.PrepareProposalResponse, error) {
+	for _, tx := range proposal.Txs {
+		parts := bytes.SplitN(tx, []byte("="), 2)
+		key, value := parts[0], parts[1]
+		log.Printf("Key: %s, Value: %s", key, value)
+	}
 	return &abcitypes.PrepareProposalResponse{}, nil
 }
 
