@@ -92,7 +92,8 @@ func (app *KVStoreApplication) ProcessProposal(
 	_ context.Context,
 	proposal *abcitypes.ProcessProposalRequest,
 ) (*abcitypes.ProcessProposalResponse, error) {
-	return &abcitypes.ProcessProposalResponse{}, nil
+	// Accept all for now
+	return &abcitypes.ProcessProposalResponse{Status: abcitypes.PROCESS_PROPOSAL_STATUS_ACCEPT}, nil
 }
 
 func (app *KVStoreApplication) FinalizeBlock(
