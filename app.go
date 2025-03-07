@@ -85,7 +85,7 @@ func (app *KVStoreApplication) PrepareProposal(
 		key, value := parts[0], parts[1]
 		log.Printf("Key: %s, Value: %s", key, value)
 	}
-	return &abcitypes.PrepareProposalResponse{}, nil
+	return &abcitypes.PrepareProposalResponse{Txs: proposal.Txs}, nil
 }
 
 func (app *KVStoreApplication) ProcessProposal(
