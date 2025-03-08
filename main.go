@@ -29,7 +29,7 @@ var (
 
 func init() {
 	flag.StringVar(&homeDir, "cmt-home", "", "Path to the CometBFT config directory")
-	flag.StringVar(&httpPort, "http-port", "8080", "HTTP web server port")
+	flag.StringVar(&httpPort, "http-port", "6969", "HTTP web server port")
 }
 
 func main() {
@@ -105,7 +105,7 @@ func main() {
 	}()
 
 	//? Start HTTP Web Server
-	webserver := NewWebServer(app, "8080", logger)
+	webserver := NewWebServer(app, httpPort, logger)
 	err = webserver.Start()
 	if err != nil {
 		log.Fatalf("Starting HTTP server: %c", err)

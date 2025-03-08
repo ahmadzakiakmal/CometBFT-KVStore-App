@@ -1,5 +1,9 @@
 # README
 
+build 
+
+`go build`
+
 run script
 
-`./CometBFT-KVStore-App cmt-home /tmp/cometbft-home`
+`./CometBFT-KVStore-App`

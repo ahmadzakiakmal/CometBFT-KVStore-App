@@ -12,7 +12,7 @@ type QueryRequest struct {
 }
 type QueryResponse struct {
 	Key   string `json:"key,omitempty"`
-	Value string `json:"value,omitempty`
+	Value string `json:"value,omitempty"`
 	Error string `json:"error,omitempty"`
 }
 
@@ -35,6 +35,8 @@ func NewWebServer(app *KVStoreApplication, httpPort string, logger cmtlog.Logger
 		},
 		logger: logger,
 	}
+
+	mux.HandleFunc("/", server.handleRoot)
 
 	return server
 }
