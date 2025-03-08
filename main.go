@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"syscall"
+	"time"
 
 	cfg "github.com/cometbft/cometbft/config"
 	cmtflags "github.com/cometbft/cometbft/libs/cli/flags"
@@ -21,10 +22,14 @@ import (
 	"github.com/spf13/viper"
 )
 
-var homeDir string
+var (
+	homeDir  string
+	httpPort string
+)
 
 func init() {
 	flag.StringVar(&homeDir, "cmt-home", "", "Path to the CometBFT config directory")
+	flag.StringVar(&httpPort, "http-port", "8080", "HTTP web server port")
 }
 
 func main() {
@@ -99,7 +104,26 @@ func main() {
 		node.Wait()
 	}()
 
+	//? Start HTTP Web Server
+	webserver := NewWebServer(app, "8080", logger)
+	err = webserver.Start()
+	if err != nil {
+		log.Fatalf("Starting HTTP server: %c", err)
+	}
+
+	//? Wait for interrupt signal to gracefully shut down the server
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c
+
+	//? Create deadline to wait for server shutdown
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	//? Shutdown the web server
+	err = webserver.Shutdown(ctx)
+	if err != nil {
+		logger.Error("Shutting down HTTP web server: %v", err)
+	}
+	logger.Info("HTTP web server gracefully stopped")
 }
