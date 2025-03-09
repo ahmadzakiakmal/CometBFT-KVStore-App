@@ -105,7 +105,7 @@ func main() {
 	}()
 
 	//? Start HTTP Web Server
-	webserver := NewWebServer(app, httpPort, logger)
+	webserver := NewWebServer(app, httpPort, logger, node)
 	err = webserver.Start()
 	if err != nil {
 		log.Fatalf("Starting HTTP server: %c", err)

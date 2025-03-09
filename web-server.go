@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	cmtlog "github.com/cometbft/cometbft/libs/log"
+	nm "github.com/cometbft/cometbft/node"
 )
 
 type QueryRequest struct {
@@ -21,9 +22,10 @@ type WebServer struct {
 	httpAddr string
 	server   *http.Server
 	logger   cmtlog.Logger
+	node     *nm.Node
 }
 
-func NewWebServer(app *KVStoreApplication, httpPort string, logger cmtlog.Logger) *WebServer {
+func NewWebServer(app *KVStoreApplication, httpPort string, logger cmtlog.Logger, node *nm.Node) *WebServer {
 	mux := http.NewServeMux()
 
 	server := &WebServer{
@@ -34,6 +36,7 @@ func NewWebServer(app *KVStoreApplication, httpPort string, logger cmtlog.Logger
 			Handler: mux,
 		},
 		logger: logger,
+		node:   node,
 	}
 
 	mux.HandleFunc("/", server.handleRoot)
@@ -63,6 +66,6 @@ func (webserver *WebServer) handleRoot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html")
-	html := "<h1>Hello from CometBFT Node Web Server</h1>"
+	html := `<h1>Node ID: ` + webserver.node.NodeInfo().ID() + "</h1>"
 	w.Write([]byte(html))
 }
