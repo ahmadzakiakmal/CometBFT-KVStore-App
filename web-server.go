@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"html/template"
 	"net/http"
 
 	cmtlog "github.com/cometbft/cometbft/libs/log"
 	nm "github.com/cometbft/cometbft/node"
 )
+
+var nodeTemplate *template.Template
 
 type QueryRequest struct {
 	Key string `json:"key"`
@@ -23,6 +26,11 @@ type WebServer struct {
 	server   *http.Server
 	logger   cmtlog.Logger
 	node     *nm.Node
+}
+
+type NodeData struct {
+	NodeID string
+	Status string
 }
 
 func NewWebServer(app *KVStoreApplication, httpPort string, logger cmtlog.Logger, node *nm.Node) *WebServer {
@@ -66,6 +74,16 @@ func (webserver *WebServer) handleRoot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html")
-	html := `<h1>Node ID: ` + webserver.node.NodeInfo().ID() + "</h1>"
-	w.Write([]byte(html))
+	nodeTemplate, err := template.ParseFiles("templates/node.tmpl")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	data := NodeData{
+		NodeID: string(webserver.node.NodeInfo().ID()),
+		Status: "online",
+	}
+	err = nodeTemplate.ExecuteTemplate(w, "node", data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
